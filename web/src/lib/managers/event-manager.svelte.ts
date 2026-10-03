@@ -52,6 +52,7 @@ export type Events = {
   AlbumUserDelete: [{ albumId: string; userId: string }];
 
   PersonUpdate: [PersonResponseDto];
+  PersonDelete: [PersonResponseDto];
   PersonShare: [{ personId: string }];
   PersonUserDelete: [{ personId: string; userId: string }];
   PersonThumbnailReady: [{ id: string }];

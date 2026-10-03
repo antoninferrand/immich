@@ -315,7 +315,7 @@
     await updateAssetCount();
   };
 
-  const { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access } = $derived(getPersonActions($t, person));
+  const { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access, Delete } = $derived(getPersonActions($t, person));
   const SelectFeaturePhoto: ActionItem = {
     title: $t('select_featured_photo'),
     icon: mdiAccountBoxOutline,
@@ -338,6 +338,7 @@
 
 <OnEvents
   {onPersonUpdate}
+  onPersonDelete={(deleted) => deleted.id === person.id && goto(Route.people())}
   onPersonAssetDelete={handlePersonAssetDelete}
   onAssetsDelete={updateAssetCount}
   onAssetsArchive={updateAssetCount}
@@ -530,7 +531,7 @@
         {#snippet trailing()}
           <ActionButton action={Access} />
           <ContextMenuButton
-            items={[SelectFeaturePhoto, Edit, HidePerson, ShowPerson, Merge, Favorite, Unfavorite]}
+            items={[SelectFeaturePhoto, Edit, HidePerson, ShowPerson, Merge, Favorite, Unfavorite, Delete]}
             aria-label={$t('open')}
           />
         {/snippet}
