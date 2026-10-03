@@ -65,6 +65,9 @@
 
   export async function searchPeople(force?: boolean, name?: string) {
     searchName = name ?? searchName;
+    if (force) {
+      searchedPeople = [];
+    }
     onSearch();
     if (searchName === '') {
       reset();

@@ -82,6 +82,31 @@ describe('People deletion', () => {
     expect(screen.getByDisplayValue('Alicia')).toBeInTheDocument();
   });
 
+  it('does not restore a deleted person when a cleared search is repeated', async () => {
+    const { rerender } = render(TestWrapper, {
+      component: PeoplePage,
+      componentProps: { data: dataFor([alice, alicia]) },
+    });
+    vi.mocked(searchPerson).mockResolvedValueOnce([alice, alicia]).mockResolvedValue([alicia]);
+    vi.mocked(invalidateAll).mockImplementation(async () => {
+      await rerender({ componentProps: { data: dataFor([alicia]) } });
+    });
+    const search = screen.getByPlaceholderText('search_people');
+    await fireEvent.input(search, { target: { value: 'Ali' } });
+    await waitFor(() => expect(searchPerson).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByDisplayValue('Alice')).toBeInTheDocument());
+    await fireEvent.input(search, { target: { value: '' } });
+
+    eventManager.emit('PersonDelete', alice);
+    await waitFor(() => expect(invalidateAll).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByDisplayValue('Alice')).not.toBeInTheDocument());
+    await fireEvent.input(search, { target: { value: 'Ali' } });
+
+    await waitFor(() => expect(searchPerson).toHaveBeenCalledTimes(2));
+    expect(screen.queryByDisplayValue('Alice')).not.toBeInTheDocument();
+    expect(screen.getByDisplayValue('Alicia')).toBeInTheDocument();
+  });
+
   it('preserves favourites when deleting a non-favourite search result', async () => {
     const data = { ...dataFor([alicia]), filter: { isFavorite: true } };
     const { rerender } = render(TestWrapper, { component: PeoplePage, componentProps: { data } });
