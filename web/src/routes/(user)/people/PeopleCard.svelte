@@ -15,7 +15,7 @@
 
   let { person, onMergePeople }: Props = $props();
 
-  const { Edit, HidePerson, Favorite, Unfavorite, Access } = $derived(getPersonActions($t, person));
+  const { Edit, HidePerson, Favorite, Unfavorite, Access, Delete } = $derived(getPersonActions($t, person));
 
   const items = $derived([
     Edit,
@@ -28,6 +28,7 @@
     Favorite,
     Unfavorite,
     Access,
+    Delete,
   ]);
 </script>
 

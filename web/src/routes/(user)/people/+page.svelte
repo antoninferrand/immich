@@ -285,11 +285,20 @@
       return person;
     });
   };
+
+  const onPersonDelete = (person: PersonResponseDto) => {
+    people = people.filter(({ id }) => id !== person.id);
+    searchedPeopleLocal = searchedPeopleLocal.filter(({ id }) => id !== person.id);
+    data.people.total--;
+    if (person.isHidden) {
+      data.people.hidden--;
+    }
+  };
 </script>
 
 <svelte:window bind:innerHeight />
 
-<OnEvents {onPersonUpdate} />
+<OnEvents {onPersonUpdate} {onPersonDelete} />
 
 <UserPageLayout
   title={$t('people')}
