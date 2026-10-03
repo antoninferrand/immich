@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import { page } from '$app/stores';
   import { scrollMemory } from '$lib/actions/scroll-memory';
   import { shortcut } from '$lib/actions/shortcut';
@@ -44,6 +44,7 @@
   let searchName = $state('');
   let newName = $state('');
   let currentPage = $state(1);
+  let paginationVersion = 0;
   let nextPage = $state(data.people.hasNextPage ? 2 : null);
   let personMerge1 = $state<PersonResponseDto>();
   let personMerge2 = $state<PersonResponseDto>();
@@ -117,12 +118,17 @@
       return;
     }
 
+    const version = paginationVersion;
+    const pageToLoad = nextPage;
     try {
       const { people: newPeople, hasNextPage } = await getAllPeople({
         withHidden: true,
-        page: nextPage,
+        page: pageToLoad,
         ...data.filter,
       });
+      if (version !== paginationVersion) {
+        return;
+      }
       people = people.concat(newPeople);
       if (nextPage !== null) {
         currentPage = nextPage;
@@ -285,11 +291,25 @@
       return person;
     });
   };
+
+  const onPersonDelete = async (person: PersonResponseDto) => {
+    searchedPeopleLocal = searchedPeopleLocal.filter(({ id }) => id !== person.id);
+    paginationVersion++;
+    nextPage = null;
+    try {
+      await searchPeopleElement?.searchPeople(true);
+      await invalidateAll();
+      currentPage = 1;
+      nextPage = data.people.hasNextPage ? 2 : null;
+    } catch (error) {
+      handleError(error, $t('errors.failed_to_load_people'));
+    }
+  };
 </script>
 
 <svelte:window bind:innerHeight />
 
-<OnEvents {onPersonUpdate} />
+<OnEvents {onPersonUpdate} {onPersonDelete} />
 
 <UserPageLayout
   title={$t('people')}

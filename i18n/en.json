@@ -875,6 +875,8 @@
   "delete_others": "Delete others",
   "delete_permanently": "Delete permanently",
   "delete_permanently_action_prompt": "{count} deleted permanently",
+  "delete_person": "Delete person",
+  "delete_person_confirmation": "Are you sure you want to delete this person? Your photos and videos will not be deleted.",
   "delete_shared_link": "Delete shared link",
   "delete_shared_link_dialog_title": "Delete Shared Link",
   "delete_tag": "Delete tag",

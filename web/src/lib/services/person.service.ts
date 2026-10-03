@@ -1,4 +1,5 @@
 import {
+  deletePerson,
   getPerson,
   PersonUpdateStrategy,
   updatePerson,
@@ -15,6 +16,7 @@ import {
   mdiHeartMinusOutline,
   mdiHeartOutline,
   mdiPencilOutline,
+  mdiTrashCanOutline,
 } from '@mdi/js';
 import type { MessageFormatter } from 'svelte-i18n';
 import { authManager } from '$lib/managers/auth-manager.svelte';
@@ -65,7 +67,33 @@ export const getPersonActions = ($t: MessageFormatter, person: PersonResponseDto
     onAction: () => modalManager.show(PersonEditAccessModal, { person }),
   };
 
-  return { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access };
+  const Delete: ActionItem = {
+    title: $t('delete_person'),
+    icon: mdiTrashCanOutline,
+    onAction: () => handleDeletePerson(person),
+  };
+
+  return { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access, Delete };
+};
+
+const handleDeletePerson = async (person: PersonResponseDto) => {
+  const $t = await getFormatter();
+  const confirmed = await modalManager.showDialog({
+    title: $t('delete_person'),
+    prompt: $t('delete_person_confirmation'),
+    confirmText: $t('delete'),
+  });
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await deletePerson({ id: person.id, personDeleteDto: {} });
+    eventManager.emit('PersonDelete', person);
+    toastManager.primary();
+  } catch (error) {
+    handleError(error, $t('errors.something_went_wrong'));
+  }
 };
 
 export const getPersonAssetActions = ($t: MessageFormatter, person: PersonResponseDto, asset: AssetResponseDto) => {
