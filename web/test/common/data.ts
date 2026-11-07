@@ -888,6 +888,10 @@ export class MockData {
     return this;
   }
 
+  deletePerson(id: string) {
+    return this.people.delete(id);
+  }
+
   addStacks(stacks: MaybeArray<StackResponseDto>) {
     for (const stack of toList(stacks)) {
       this.stacks.set(stack.id, stack);

@@ -2,6 +2,8 @@ import { authManager } from '#lib/managers/auth-manager.svelte.ts';
 import { eventManager } from '#lib/managers/event-manager.svelte.ts';
 import PersonEditAccessModal from '#lib/modals/PersonEditAccessModal.svelte';
 import PersonEditModal from '#lib/modals/PersonEditModal.svelte';
+import { executeMutation } from '#lib/queries/client.ts';
+import { deletePersonMutation } from '#lib/queries/person.query.ts';
 import { handleError } from '#lib/utils/handle-error.ts';
 import { getFormatter } from '#lib/utils/i18n.ts';
 import {
@@ -21,6 +23,7 @@ import {
   mdiHeartMinusOutline,
   mdiHeartOutline,
   mdiPencilOutline,
+  mdiTrashCanOutline,
 } from '@mdi/js';
 import type { MessageFormatter } from 'svelte-i18n';
 
@@ -70,7 +73,20 @@ export const getPersonActions = ($t: MessageFormatter, person: PersonResponseDto
     onAction: () => modalManager.show(PersonEditAccessModal, { person }),
   };
 
-  return { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access };
+  const Delete: ActionItem = {
+    title: $t('delete_person'),
+    icon: mdiTrashCanOutline,
+    onAction: () =>
+      executeMutation(deletePersonMutation, [{ id: person.id, personDeleteDto: {} }], {
+        confirm: {
+          title: $t('delete_person'),
+          prompt: $t('delete_person_confirmation'),
+          confirmText: $t('delete'),
+        },
+      }),
+  };
+
+  return { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access, Delete };
 };
 
 export const getPersonAssetActions = ($t: MessageFormatter, person: PersonResponseDto, asset: AssetResponseDto) => {
