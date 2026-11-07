@@ -1,24 +1,31 @@
+import { eventManager } from '#lib/managers/event-manager.svelte.ts';
+import { getPersonActions } from '#lib/services/person.service.ts';
+import { handleError } from '#lib/utils/handle-error.ts';
+import { getFormatter } from '#lib/utils/i18n.ts';
+import { factory } from '#test/unit/factories.ts';
 import { deletePerson } from '@immich/sdk';
-import { modalManager } from '@immich/ui';
 import type { MessageFormatter } from 'svelte-i18n';
-import { eventManager } from '$lib/managers/event-manager.svelte';
-import { getPersonActions } from '$lib/services/person.service';
-import { handleError } from '$lib/utils/handle-error';
-import { getFormatter } from '$lib/utils/i18n';
-import { personFactory } from '@test-data/factories/person-factory';
 
-vi.mock('@immich/sdk');
-vi.mock('@immich/ui', () => ({
-  modalManager: { showDialog: vi.fn() },
+vi.mock('@immich/sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@immich/sdk')>()),
+  deletePerson: vi.fn(),
+}));
+const { showDialog } = vi.hoisted(() => ({ showDialog: vi.fn() }));
+vi.mock('@immich/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@immich/ui')>()),
+  modalManager: { showDialog },
   toastManager: { primary: vi.fn() },
 }));
-vi.mock('$lib/utils/i18n', () => ({ getFormatter: vi.fn(), getPreferredLocale: vi.fn() }));
-vi.mock('$lib/modals/PersonEditModal.svelte', () => ({ default: vi.fn() }));
-vi.mock('$lib/modals/PersonEditAccessModal.svelte', () => ({ default: vi.fn() }));
-vi.mock('$lib/utils/handle-error', () => ({ handleError: vi.fn() }));
+vi.mock('#lib/utils/i18n.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#lib/utils/i18n.ts')>()),
+  getFormatter: vi.fn(),
+}));
+vi.mock('#lib/modals/PersonEditModal.svelte', () => ({ default: vi.fn() }));
+vi.mock('#lib/modals/PersonEditAccessModal.svelte', () => ({ default: vi.fn() }));
+vi.mock('#lib/utils/handle-error.ts', () => ({ handleError: vi.fn() }));
 
 describe('Delete person', () => {
-  const person = personFactory.build();
+  const person = factory.person();
   const $t: MessageFormatter = String;
 
   beforeEach(() => {
@@ -27,13 +34,13 @@ describe('Delete person', () => {
   });
 
   it('does not delete when confirmation is cancelled', async () => {
-    vi.mocked(modalManager.showDialog).mockResolvedValue(false);
+    showDialog.mockResolvedValue(false);
     await getPersonActions($t, person).Delete.onAction?.(undefined as never);
     expect(deletePerson).not.toHaveBeenCalled();
   });
 
   it('notifies listeners only after deletion succeeds', async () => {
-    vi.mocked(modalManager.showDialog).mockResolvedValue(true);
+    showDialog.mockResolvedValue(true);
     vi.mocked(deletePerson).mockResolvedValue(undefined as never);
     const listener = vi.fn();
     const unsubscribe = eventManager.on({ PersonDelete: listener });
@@ -47,7 +54,7 @@ describe('Delete person', () => {
   });
 
   it('keeps the person visible when deletion fails', async () => {
-    vi.mocked(modalManager.showDialog).mockResolvedValue(true);
+    showDialog.mockResolvedValue(true);
     const error = new Error('Deletion failed');
     vi.mocked(deletePerson).mockRejectedValue(error);
     const listener = vi.fn();
