@@ -9,6 +9,7 @@
   import PeopleFilterModal from '#lib/modals/PeopleFilterModal.svelte';
   import PersonMergeSuggestionModal from '#lib/modals/PersonMergeSuggestionModal.svelte';
   import { queryClient } from '#lib/queries/client.ts';
+  import { getAllPeopleQuery } from '#lib/queries/person.query.ts';
   import { searchPersonQuery } from '#lib/queries/search.query.ts';
   import { Route } from '#lib/route.ts';
   import { getPeopleUserActions } from '#lib/services/person-user.service.ts';
@@ -29,7 +30,7 @@
   import { mdiAccountOff, mdiEyeOutline, mdiTune } from '@mdi/js';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
-  import { goto, refreshAll } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import type { PageData } from './$types';
   import PeopleCard from './PeopleCard.svelte';
@@ -45,6 +46,7 @@
   let newName = $state('');
   let currentPage = $state(1);
   let paginationVersion = 0;
+  let refreshFailed = $state(false);
   let nextPage = $state(data.people.hasNextPage ? 2 : null);
   let personMerge1 = $state<PersonResponseDto>();
   let personMerge2 = $state<PersonResponseDto>();
@@ -82,12 +84,17 @@
           pagesToLoad = Number.parseInt(newNextPage) - nextPage;
 
         if (pagesToLoad) {
+          const version = paginationVersion;
           handlePromiseError(
             Promise.all(
               Array.from({ length: pagesToLoad }, (_, i) => {
                 return getAllPeople({ withHidden: true, page: startingPage + i, ...data.filter });
               }),
             ).then((pages) => {
+              if (version !== paginationVersion) {
+                resolve();
+                return;
+              }
               for (const page of pages) {
                 people = people.concat(page.people);
               }
@@ -282,17 +289,24 @@
     });
   };
 
-  const onPersonDelete = async (person: PersonResponseDto) => {
-    people = people.filter(({ id }) => id !== person.id);
+  const refreshPeople = async () => {
     paginationVersion++;
+    refreshFailed = false;
     nextPage = null;
     try {
-      await refreshAll();
+      const refreshed = await queryClient.query(getAllPeopleQuery({ withHidden: true, ...data.filter }));
+      data = { ...data, people: refreshed };
       currentPage = 1;
       nextPage = data.people.hasNextPage ? 2 : null;
     } catch (error) {
+      refreshFailed = true;
       handleError(error, $t('errors.failed_to_load_people'));
     }
+  };
+
+  const onPersonDelete = async (person: { id: string }) => {
+    people = people.filter(({ id }) => id !== person.id);
+    await refreshPeople();
   };
 </script>
 
@@ -378,6 +392,11 @@
           {$t(searchName ? 'search_no_people_named' : 'search_no_people', { values: { name: searchName } })}
         </p>
       </div>
+    </div>
+  {/if}
+  {#if refreshFailed}
+    <div class="flex justify-center py-4">
+      <Button onclick={refreshPeople}>{$t('retry')}</Button>
     </div>
   {/if}
 </UserPageLayout>

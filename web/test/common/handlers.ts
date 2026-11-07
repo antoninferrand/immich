@@ -160,6 +160,7 @@ export const createHandlers = (data: MockData): Handlers => {
       const person = data.getPerson(params.id);
       return person ? { json: person } : notFound;
     },
+    deletePerson: ({ params }) => (data.deletePerson(params.id) ? { status: 204 } : notFound),
     getPersonStatistics: ({ params }) => ({ json: data.personStatistics(params.id) }),
     getClusterGroupUsers: ({ params }) => ({ json: data.clusterGroupUsers(params.id) }),
     updatePerson: ({ params, body }) => {

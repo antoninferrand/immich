@@ -2,11 +2,12 @@ import { authManager } from '#lib/managers/auth-manager.svelte.ts';
 import { eventManager } from '#lib/managers/event-manager.svelte.ts';
 import PersonEditAccessModal from '#lib/modals/PersonEditAccessModal.svelte';
 import PersonEditModal from '#lib/modals/PersonEditModal.svelte';
+import { executeMutation } from '#lib/queries/client.ts';
+import { deletePersonMutation } from '#lib/queries/person.query.ts';
 import { handleError } from '#lib/utils/handle-error.ts';
 import { getFormatter } from '#lib/utils/i18n.ts';
 import {
   PersonUpdateStrategy,
-  deletePerson,
   getPerson,
   updatePerson,
   type AssetResponseDto,
@@ -75,30 +76,17 @@ export const getPersonActions = ($t: MessageFormatter, person: PersonResponseDto
   const Delete: ActionItem = {
     title: $t('delete_person'),
     icon: mdiTrashCanOutline,
-    onAction: () => handleDeletePerson(person),
+    onAction: () =>
+      executeMutation(deletePersonMutation, [{ id: person.id, personDeleteDto: {} }], {
+        confirm: {
+          title: $t('delete_person'),
+          prompt: $t('delete_person_confirmation'),
+          confirmText: $t('delete'),
+        },
+      }),
   };
 
   return { Edit, Favorite, Unfavorite, HidePerson, ShowPerson, Access, Delete };
-};
-
-const handleDeletePerson = async (person: PersonResponseDto) => {
-  const $t = await getFormatter();
-  const confirmed = await modalManager.showDialog({
-    title: $t('delete_person'),
-    prompt: $t('delete_person_confirmation'),
-    confirmText: $t('delete'),
-  });
-  if (!confirmed) {
-    return;
-  }
-
-  try {
-    await deletePerson({ id: person.id, personDeleteDto: {} });
-    eventManager.emit('PersonDelete', person);
-    toastManager.primary();
-  } catch (error) {
-    handleError(error, $t('errors.something_went_wrong'));
-  }
 };
 
 export const getPersonAssetActions = ($t: MessageFormatter, person: PersonResponseDto, asset: AssetResponseDto) => {
